@@ -1,61 +1,116 @@
-"use client"; // Make sure this is a client component
+"use client";
 
-import { useDispatch, useSelector } from "react-redux";
-import { deleteTask } from "../store/taskSlice"; // Adjust the path if necessary
+import { useSelector, useDispatch } from "react-redux";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { editTask } from "../store/taskSlice";
 
 const TaskList = () => {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedPriority, setSelectedPriority] = useState("");
+  const [selectedState, setSelectedState] = useState("");
   const tasks = useSelector((state) => state.tasks.tasks);
   const dispatch = useDispatch();
   const router = useRouter();
 
-  const handleEdit = (taskId) => {
-    router.push(`/edit-task/${taskId}`); // Navigate to edit task page
-  };
-
-  const handleDelete = (taskId) => {
-    dispatch(deleteTask(taskId)); // Delete task from Redux store
-  };
+  // Filter tasks based on search term, priority, and state
+  const filteredTasks = tasks.filter((task) => {
+    const matchesSearch = task.title.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesPriority = selectedPriority ? task.priority === selectedPriority : true;
+    const matchesState = selectedState ? task.state === selectedState : true;
+    return matchesSearch && matchesPriority && matchesState;
+  });
 
   const handleAddTask = () => {
-    router.push("/add-task"); // Navigate to add task page
+    router.push("/add-task");
+  };
+
+  const handleChangeState = (taskId, newState) => {
+    dispatch(editTask({ id: taskId, state: newState }));
   };
 
   return (
-    <div className="container mx-auto p-4">
-      <h2 className="text-2xl font-bold mb-4">Task List</h2>
-      <button 
-        onClick={handleAddTask} 
-        className="bg-green-500 text-white py-2 px-4 rounded mb-4 hover:bg-green-600"
+    <div className="max-w-lg mx-auto p-6">
+      <h1 className="text-3xl font-bold text-center mb-6">Task List</h1>
+
+      {/* Search Input */}
+      <input
+        type="text"
+        placeholder="Search tasks by name..."
+        value={searchTerm}
+        onChange={(e) => setSearchTerm(e.target.value)}
+        className="w-full px-4 py-2 mb-4 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+      />
+
+      {/* Priority Filter */}
+      <select
+        value={selectedPriority}
+        onChange={(e) => setSelectedPriority(e.target.value)}
+        className="w-full px-4 py-2 mb-4 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+      >
+        <option value="">Filter by Priority</option>
+        <option value="Low">Low</option>
+        <option value="Medium">Medium</option>
+        <option value="High">High</option>
+      </select>
+
+      {/* State Filter */}
+      <select
+        value={selectedState}
+        onChange={(e) => setSelectedState(e.target.value)}
+        className="w-full px-4 py-2 mb-4 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+      >
+        <option value="">Filter by State</option>
+        <option value="todo">To Do</option>
+        <option value="doing">Doing</option>
+        <option value="done">Done</option>
+      </select>
+
+      {/* Add Task Button */}
+      <button
+        onClick={handleAddTask}
+        className="w-full py-2 mb-6 bg-blue-500 text-white font-semibold rounded-md hover:bg-blue-600 transition"
       >
         Add Task
       </button>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {tasks.map((task) => (
-          <div key={task.id} className="border p-4 rounded shadow">
-            <img src={task.image} alt={task.title} className="w-full h-32 object-cover mb-2" />
-            <h3 className="text-xl font-semibold">{task.title}</h3>
-            <p>{task.description}</p>
-            <p className="font-bold">Priority: {task.priority}</p>
-            <p className={`font-bold ${task.state === 'done' ? 'text-green-500' : task.state === 'doing' ? 'text-yellow-500' : 'text-red-500'}`}>
-              State: {task.state}
-            </p>
-            <div className="mt-4 flex justify-between">
-              <button 
-                className="bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600" 
-                onClick={() => handleEdit(task.id)}
-              >
-                Edit
-              </button>
-              <button 
-                className="bg-red-500 text-white py-2 px-4 rounded hover:bg-red-600" 
-                onClick={() => handleDelete(task.id)}
-              >
-                Delete
-              </button>
+
+      {/* Display filtered tasks */}
+      <div className="space-y-4">
+        {filteredTasks.length > 0 ? (
+          filteredTasks.map((task) => (
+            <div
+              key={task.id}
+              className="p-4 border rounded-md shadow-sm bg-white flex items-start"
+            >
+              {task.image && (
+                <img
+                  src={task.image}
+                  alt={task.title}
+                  className="w-16 h-16 object-cover rounded mr-4"
+                />
+              )}
+              <div className="flex-grow">
+                <h2 className="text-xl font-semibold">{task.title}</h2>
+                <p>{task.description}</p>
+                <p className="text-sm text-gray-600">Priority: {task.priority}</p>
+                <p className="text-sm text-gray-600">State: {task.state}</p>
+
+                {/* State Change Dropdown */}
+                <select
+                  value={task.state}
+                  onChange={(e) => handleChangeState(task.id, e.target.value)}
+                  className="mt-2 px-2 py-1 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="todo">To Do</option>
+                  <option value="doing">Doing</option>
+                  <option value="done">Done</option>
+                </select>
+              </div>
             </div>
-          </div>
-        ))}
+          ))
+        ) : (
+          <p className="text-center text-gray-500">No tasks found.</p>
+        )}
       </div>
     </div>
   );
