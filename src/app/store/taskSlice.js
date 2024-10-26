@@ -14,10 +14,9 @@ const taskSlice = createSlice({
             state.tasks.push(newTask);
         },
         editTask: (state, action) => {
-            const { id, updatedTask } = action.payload;
-            const existingTask = state.tasks.find((task) => task.id === id);
-            if (existingTask) {
-                Object.assign(existingTask, updatedTask);
+            const index = state.tasks.findIndex(task => task.id === action.payload.id);
+            if (index !== -1) {
+                state.tasks[index] = { ...state.tasks[index], ...action.payload };
             }
         },
         deleteTask: (state, action) => {
